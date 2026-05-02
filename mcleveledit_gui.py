@@ -4,8 +4,12 @@ MCLevelEdit - Minecraft Level.dat Parser & Editor (GUI Version)
 """
 
 import gzip
+import json
 import os
 import struct
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+APP_ICON_PATH = os.path.join(SCRIPT_DIR, 'pymc.ico')
 from datetime import datetime
 from typing import Any, Dict, Optional
 
@@ -16,7 +20,7 @@ from PySide6.QtWidgets import (
     QMessageBox, QFileDialog, QDialog, QStyledItemDelegate
 )
 from PySide6.QtCore import Qt, Signal, QTimer
-from PySide6.QtGui import QIntValidator, QDoubleValidator
+from PySide6.QtGui import QIntValidator, QDoubleValidator, QIcon
 
 
 class NBTParser:
@@ -487,94 +491,19 @@ def flatten_nbt(data: dict, prefix: str = "") -> dict:
     return result
 
 
-TRANSLATIONS = {
-    "LevelName": "世界名称",
-    "RandomSeed": "世界种子",
-    "SpawnX": "出生点X",
-    "SpawnY": "出生点Y",
-    "SpawnZ": "出生点Z",
-    "Difficulty": "难度",
-    "GameType": "游戏模式",
-    "Hardcore": "极限模式",
-    "LastPlayed": "最后游玩时间",
-    "Version": "版本",
-    "GameRules": "游戏规则",
-    "DataPacks": "数据包",
-    "WorldGenSettings": "世界生成设置",
-    "Dimension": "维度",
-    "DifficultyLocked": "难度锁定",
-    "Time": "时间",
-    "DayTime": "游戏时间",
-    "SpawnAngle": "出生角度",
-    "raining": "是否下雨",
-    "rainTime": "下雨时间",
-    "clearWeather": "晴朗天气",
-    "Name": "版本名称",
-    "Id": "版本ID",
-    "Snapshot": "快照版本",
-    "Series": "系列",
-    "InjectedStore": "注入存储",
-    "gameRule.allowEnteringNetherUsingPortals": "允许进入下界",
-    "gameRule.allowFireTicksAwayFromPlayer": "允许火在远离玩家处蔓延",
-    "gameRule.announceAdvancements": "进度通知",
-    "gameRule.blockExplosionDropDecay": "方块交互爆炸不掉落",
-    "gameRule.commandBlockOutput": "广播命令方块输出",
-    "gameRule.commandBlocksEnabled": "启用命令方块",
-    "gameRule.commandModificationBlockLimit": "命令修改方块数量限制",
-    "gameRule.disableElytraMovementCheck": "禁用鞘翅移动检测",
-    "gameRule.disablePlayerMovementCheck": "禁用玩家移动检测",
-    "gameRule.disableRaids": "禁用袭击",
-    "gameRule.doDaylightCycle": "游戏内时间流逝",
-    "gameRule.doEntityDrops": "非生物实体掉落",
-    "gameRule.doFireTick": "火焰蔓延",
-    "gameRule.doImmediateRespawn": "立即重生",
-    "gameRule.doInsomnia": "生成幻翼",
-    "gameRule.doLimitedCrafting": "合成需要配方",
-    "gameRule.doMobLoot": "生物战利品掉落",
-    "gameRule.doMobSpawning": "生成生物",
-    "gameRule.doPatrolSpawning": "生成灾厄巡逻队",
-    "gameRule.doTileDrops": "方块掉落",
-    "gameRule.doTraderSpawning": "生成流浪商人",
-    "gameRule.doVinesSpread": "藤蔓蔓延",
-    "gameRule.doWardenSpawning": "生成监守者",
-    "gameRule.doWeatherCycle": "天气更替",
-    "gameRule.drowningDamage": "溺水伤害",
-    "gameRule.enderPearlsVanishOnDeath": "掷出的末影珍珠在死亡时消失",
-    "gameRule.fallDamage": "摔落伤害",
-    "gameRule.fireDamage": "火焰伤害",
-    "gameRule.forgiveDeadPlayers": "宽恕死亡玩家",
-    "gameRule.freezeDamage": "冰冻伤害",
-    "gameRule.globalSoundEvents": "全局声音事件",
-    "gameRule.keepInventory": "死亡后保留物品栏",
-    "gameRule.lavaSourceConversion": "允许流动熔岩转化为熔岩源",
-    "gameRule.locatorBar": "启用玩家定位栏",
-    "gameRule.logAdminCommands": "通告管理员命令",
-    "gameRule.maxCommandChainLength": "命令连锁执行数量限制",
-    "gameRule.maxCommandForkCount": "命令上下文数量限制",
-    "gameRule.maxEntityCramming": "实体挤压上限",
-    "gameRule.minecartMaxSpeed": "矿车最大速度",
-    "gameRule.mobExplosionDropDecay": "生物爆炸不掉落",
-    "gameRule.mobGriefing": "允许破坏性生物行为",
-    "gameRule.naturalRegeneration": "生命值自然恢复",
-    "gameRule.playersNetherPortalCreativeDelay": "创造模式玩家在下界传送门中等待的时间",
-    "gameRule.playersNetherPortalDefaultDelay": "非创造模式玩家在下界传送门中等待的时间",
-    "gameRule.playersSleepingPercentage": "入睡占比",
-    "gameRule.projectilesCanBreakBlocks": "弹射物能否破坏方块",
-    "gameRule.pvp": "启用PvP",
-    "gameRule.randomTickSpeed": "随机刻速率",
-    "gameRule.reducedDebugInfo": "简化调试信息",
-    "gameRule.sendCommandFeedback": "发送命令反馈",
-    "gameRule.showDeathMessages": "显示死亡消息",
-    "gameRule.snowAccumulationHeight": "积雪厚度",
-    "gameRule.spawnerBlocksEnabled": "启用刷怪笼方块",
-    "gameRule.spawnMonsters": "生成怪物",
-    "gameRule.spawnRadius": "重生点半径",
-    "gameRule.spectatorsGenerateChunks": "允许旁观者生成地形",
-    "gameRule.tntExplodes": "允许TNT被点燃并爆炸",
-    "gameRule.tntExplosionDropDecay": "TNT爆炸不掉落",
-    "gameRule.universalAnger": "无差别愤怒",
-    "gameRule.waterSourceConversion": "允许流动水转化为水源",
-}
+def load_translations() -> dict:
+    try:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        translate_file = os.path.join(script_dir, 'key_translate.json')
+        if os.path.exists(translate_file):
+            with open(translate_file, 'r', encoding='utf-8') as f:
+                return json.load(f)
+    except:
+        pass
+    return {}
+
+
+TRANSLATIONS = load_translations()
 
 
 def get_translation(key: str) -> str:
@@ -597,6 +526,7 @@ class FileSelectWindow(QDialog):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.setWindowIcon(QIcon(APP_ICON_PATH))
         self.setWindowTitle("MCLevelEdit - 选择文件")
         self.setMinimumWidth(500)
         self.init_ui()
@@ -648,12 +578,109 @@ class FileSelectWindow(QDialog):
         self.accept()
 
 
-class ModeSelectWindow(QDialog):
-    modeSelected = Signal(str)
+class JsonSelectWindow(QDialog):
+    fileSelected = Signal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("选择模式")
+        self.setWindowIcon(QIcon(APP_ICON_PATH))
+        self.setWindowTitle("MCLevelEdit - 选择文件")
+        self.setMinimumWidth(500)
+        self.init_ui()
+
+    def init_ui(self):
+        layout = QVBoxLayout()
+
+        label = QLabel("请输入 原数据json 文件路径:")
+        layout.addWidget(label)
+
+        path_layout = QHBoxLayout()
+        self.path_input = QLineEdit()
+        self.path_input.setPlaceholderText("请输入文件路径...")
+        path_layout.addWidget(self.path_input)
+
+        browse_btn = QPushButton("定位")
+        browse_btn.clicked.connect(self.browse_file)
+        path_layout.addWidget(browse_btn)
+
+        layout.addLayout(path_layout)
+
+        open_btn = QPushButton("打开")
+        open_btn.clicked.connect(self.open_file)
+        layout.addWidget(open_btn)
+
+        self.setLayout(layout)
+
+    def browse_file(self):
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "选择 原数据json 文件",
+            "",
+            "JSON Files (*.json);;All Files (*)"
+        )
+        if file_path:
+            self.path_input.setText(file_path)
+
+    def open_file(self):
+        file_path = self.path_input.text().strip()
+        if not file_path:
+            QMessageBox.warning(self, "警告", "请输入文件路径")
+            return
+
+        if not os.path.exists(file_path):
+            QMessageBox.warning(self, "警告", "文件不存在")
+            return
+
+        self.fileSelected.emit(file_path)
+        self.accept()
+
+
+class ParseModeWindow(QDialog):
+    parseModeSelected = Signal(str)
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowIcon(QIcon(APP_ICON_PATH))
+        self.setWindowTitle("选择解析方式")
+        self.setMinimumWidth(300)
+        self.init_ui()
+
+    def init_ui(self):
+        layout = QVBoxLayout()
+
+        label = QLabel("请选择解析方式:")
+        label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(label)
+
+        dat_btn = QPushButton("从leveldat读取")
+        dat_btn.clicked.connect(lambda: self.select_mode("dat"))
+        layout.addWidget(dat_btn)
+
+        json_btn = QPushButton("从原数据读取")
+        json_btn.clicked.connect(lambda: self.select_mode("json"))
+        layout.addWidget(json_btn)
+
+        cancel_btn = QPushButton("取消")
+        cancel_btn.clicked.connect(self.reject)
+        layout.addWidget(cancel_btn)
+
+        self.setLayout(layout)
+
+    def select_mode(self, mode: str):
+        self.parseModeSelected.emit(mode)
+        self.accept()
+
+
+class ModeSelectWindow(QDialog):
+    modeSelected = Signal(str)
+    exportRequested = Signal(dict)
+
+    def __init__(self, nbt_data: dict, file_path: str, parent=None):
+        self.nbt_data = nbt_data
+        self.file_path = file_path
+        super().__init__(parent)
+        self.setWindowIcon(QIcon(APP_ICON_PATH))
+        self.setWindowTitle(f"选择模式：{file_path}")
         self.setMinimumWidth(300)
         self.init_ui()
 
@@ -672,21 +699,46 @@ class ModeSelectWindow(QDialog):
         edit_btn.clicked.connect(lambda: self.select_mode("edit"))
         layout.addWidget(edit_btn)
 
+        export_btn = QPushButton("导出原数据")
+        export_btn.clicked.connect(self.export_data)
+        layout.addWidget(export_btn)
+
         self.setLayout(layout)
 
     def select_mode(self, mode: str):
         self.modeSelected.emit(mode)
         self.accept()
 
+    def export_data(self):
+        import json
+        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            f"导出原数据 - {self.file_path}",
+            "",
+            "JSON Files (*.json);;All Files (*)"
+        )
+        if file_path:
+            try:
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    json.dump(self.nbt_data, f, ensure_ascii=False, indent=2)
+                QMessageBox.information(self, "提示", f"导出成功: {file_path}")
+                self.accept()
+                QTimer.singleShot(0, self.parent().open_mode_select)
+            except Exception as e:
+                QMessageBox.warning(self, "错误", f"导出失败: {e}")
+
 
 class ReadModeWindow(QDialog):
     backRequested = Signal()
 
-    def __init__(self, nbt_data: dict, parent=None):
+    def __init__(self, nbt_data: dict, file_path: str, parent=None):
         self.nbt_data = nbt_data
+        self.file_path = file_path
         super().__init__(parent)
-        self.setWindowTitle("读取模式")
+        self.setWindowIcon(QIcon(APP_ICON_PATH))
+        self.setWindowTitle(f"读取模式：{file_path}")
         self.setMinimumSize(600, 400)
+        self.setWindowFlags(self.windowFlags() | Qt.WindowType.WindowMinMaxButtonsHint)
         self.init_ui()
 
     def init_ui(self):
@@ -787,14 +839,29 @@ class InputValidatorDelegate(QStyledItemDelegate):
 class EditModeWindow(QDialog):
     backRequested = Signal()
 
-    def __init__(self, nbt_data: dict, parent=None):
+    def __init__(self, nbt_data: dict, file_path: str, parent=None):
         self.nbt_data = nbt_data
+        self.file_path = file_path
         self.original_data = flatten_nbt(nbt_data)
         self.value_types = self._get_value_types()
         super().__init__(parent)
-        self.setWindowTitle("编辑模式")
+        self.setWindowIcon(QIcon(APP_ICON_PATH))
+        self.setWindowTitle(f"编辑模式：{file_path}")
         self.setMinimumSize(800, 500)
+        self.setWindowFlags(self.windowFlags() | Qt.WindowType.WindowMinMaxButtonsHint)
         self.init_ui()
+
+        if parent and hasattr(parent, 'translation_notice_shown') and not parent.translation_notice_shown:
+            parent.translation_notice_shown = True
+            QTimer.singleShot(100, self.show_translation_notice)
+
+    def show_translation_notice(self):
+        QMessageBox.information(
+            self,
+            "关于翻译",
+            "大部分翻译使用wiki中记载的翻译，但有部分翻译使用了机翻，请理性看待\n"
+            "欢迎在本项目开源仓库中提交更合适的翻译进行代替"
+        )
 
     def _get_value_types(self):
         types = {}
@@ -849,8 +916,15 @@ class EditModeWindow(QDialog):
         search_layout.addWidget(QLabel("搜索:"))
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("搜索")
+        self.search_input.setMinimumWidth(200)
         self.search_input.textChanged.connect(self.on_search_changed)
         search_layout.addWidget(self.search_input)
+
+        refresh_btn = QPushButton("刷新")
+        refresh_btn.clicked.connect(self.on_refresh_clicked)
+        search_layout.addWidget(refresh_btn)
+
+        search_layout.addStretch()
         layout.addLayout(search_layout)
 
         scroll = QScrollArea()
@@ -916,6 +990,28 @@ class EditModeWindow(QDialog):
 
         self.populate_table(filtered)
 
+    def on_refresh_clicked(self):
+        msg_box = QMessageBox(self)
+        msg_box.setWindowIcon(QIcon(APP_ICON_PATH))
+        msg_box.setWindowTitle("刷新")
+        msg_box.setText("是否保存当前编辑？")
+        msg_box.setIcon(QMessageBox.Icon.Question)
+
+        save_btn = msg_box.addButton("保存", QMessageBox.ButtonRole.YesRole)
+        discard_btn = msg_box.addButton("放弃", QMessageBox.ButtonRole.DestructiveRole)
+        cancel_btn = msg_box.addButton("取消", QMessageBox.ButtonRole.RejectRole)
+        msg_box.setDefaultButton(cancel_btn)
+
+        msg_box.exec()
+
+        if msg_box.clickedButton() == save_btn:
+            self.save_data()
+            self.accept()
+            QTimer.singleShot(100, lambda: self.parent().open_edit_mode())
+        elif msg_box.clickedButton() == discard_btn:
+            self.accept()
+            QTimer.singleShot(100, lambda: self.parent().open_edit_mode())
+
     def sync_table_to_data(self):
         for i in range(self.table.rowCount()):
             key = self.table.item(i, 0).text()
@@ -962,26 +1058,70 @@ class EditModeWindow(QDialog):
         self.table.setItemDelegateForColumn(2, InputValidatorDelegate(self.table))
 
     def save_data(self):
-        self.sync_table_to_data()
-        self.update_nbt_data()
-        QMessageBox.information(self, "提示", "数据已保存到内存")
+        msg_box = QMessageBox(self)
+        msg_box.setWindowIcon(QIcon(APP_ICON_PATH))
+        msg_box.setWindowTitle("确认保存")
+        msg_box.setText("是否确认保存？编辑数据可能会导致存档损坏")
+        msg_box.setIcon(QMessageBox.Icon.Question)
+
+        yes_btn = msg_box.addButton("继续", QMessageBox.ButtonRole.YesRole)
+        no_btn = msg_box.addButton("取消", QMessageBox.ButtonRole.NoRole)
+        msg_box.setDefaultButton(no_btn)
+
+        msg_box.exec()
+
+        if msg_box.clickedButton() == yes_btn:
+            self.sync_table_to_data()
+            self.update_nbt_data()
+
+            try:
+                if os.path.exists(self.file_path):
+                    os.remove(self.file_path)
+
+                if save_level_dat(self.file_path, self.nbt_data):
+                    QMessageBox.information(self, "提示", f"保存成功: {self.file_path}")
+                else:
+                    QMessageBox.warning(self, "错误", "保存失败")
+            except Exception as e:
+                QMessageBox.warning(self, "错误", f"保存失败: {e}")
 
     def output_data(self):
         self.sync_table_to_data()
         self.update_nbt_data()
 
-        file_path, _ = QFileDialog.getSaveFileName(
-            self,
-            "保存 level.dat",
-            "",
-            "Level Dat Files (*.dat);;All Files (*)"
-        )
+        dialog = OutputModeWindow(self.file_path, self)
+        dialog.outputModeSelected.connect(lambda mode: self.do_output(mode))
+        dialog.exec()
 
-        if file_path:
-            if save_level_dat(file_path, self.nbt_data):
-                QMessageBox.information(self, "提示", f"保存成功: {file_path}")
-            else:
-                QMessageBox.warning(self, "错误", "保存失败")
+    def do_output(self, mode: str):
+        if mode == "json":
+            file_path, _ = QFileDialog.getSaveFileName(
+                self,
+                f"导出原数据 - {self.file_path}",
+                "",
+                "JSON Files (*.json);;All Files (*)"
+            )
+
+            if file_path:
+                try:
+                    with open(file_path, 'w', encoding='utf-8') as f:
+                        json.dump(self.nbt_data, f, ensure_ascii=False, indent=2)
+                    QMessageBox.information(self, "提示", f"导出成功: {file_path}")
+                except Exception as e:
+                    QMessageBox.warning(self, "错误", f"导出失败: {e}")
+        elif mode == "dat":
+            file_path, _ = QFileDialog.getSaveFileName(
+                self,
+                f"保存 level.dat - {self.file_path}",
+                "",
+                "Level Dat Files (*.dat);;All Files (*)"
+            )
+
+            if file_path:
+                if save_level_dat(file_path, self.nbt_data):
+                    QMessageBox.information(self, "提示", f"保存成功: {file_path}")
+                else:
+                    QMessageBox.warning(self, "错误", "保存失败")
 
     def update_nbt_data(self):
         for item in self.all_data:
@@ -1051,13 +1191,53 @@ class EditModeWindow(QDialog):
         self.accept()
 
 
+class OutputModeWindow(QDialog):
+    outputModeSelected = Signal(str)
+
+    def __init__(self, file_path: str, parent=None):
+        self.file_path = file_path
+        super().__init__(parent)
+        self.setWindowIcon(QIcon(APP_ICON_PATH))
+        self.setWindowTitle(f"输出模式选择：{file_path}")
+        self.setMinimumWidth(300)
+        self.init_ui()
+
+    def init_ui(self):
+        layout = QVBoxLayout()
+
+        label = QLabel("请选择输出模式:")
+        label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(label)
+
+        json_btn = QPushButton("原数据")
+        json_btn.clicked.connect(lambda: self.select_mode("json"))
+        layout.addWidget(json_btn)
+
+        dat_btn = QPushButton("打包为leveldat")
+        dat_btn.clicked.connect(lambda: self.select_mode("dat"))
+        layout.addWidget(dat_btn)
+
+        cancel_btn = QPushButton("取消")
+        cancel_btn.clicked.connect(self.reject)
+        layout.addWidget(cancel_btn)
+
+        self.setLayout(layout)
+
+    def select_mode(self, mode: str):
+        self.outputModeSelected.emit(mode)
+        self.accept()
+
+
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
+        self.setWindowIcon(QIcon(APP_ICON_PATH))
         self.setWindowTitle("MCLevelEdit")
         self.setMinimumSize(400, 200)
         self.nbt_data = None
         self.file_path = None
+        self.translation_notice_shown = False
+        self.mode_select_window = None
         self.init_ui()
 
     def init_ui(self):
@@ -1078,9 +1258,54 @@ class MainWindow(QWidget):
         self.setLayout(layout)
 
     def open_file_select(self):
-        dialog = FileSelectWindow(self)
-        dialog.fileSelected.connect(self.on_file_selected)
+        dialog = ParseModeWindow(self)
+        dialog.parseModeSelected.connect(self.on_parse_mode_selected)
         dialog.exec()
+
+    def on_parse_mode_selected(self, mode: str):
+        if mode == "dat":
+            file_dialog = FileSelectWindow(self)
+            file_dialog.fileSelected.connect(self.on_file_selected)
+            file_dialog.exec()
+        elif mode == "json":
+            json_dialog = JsonSelectWindow(self)
+            json_dialog.fileSelected.connect(self.on_json_selected)
+            json_dialog.exec()
+
+    def on_json_selected(self, json_file_path: str):
+        try:
+            with open(json_file_path, 'r', encoding='utf-8') as f:
+                self.nbt_data = json.load(f)
+        except Exception as e:
+            QMessageBox.warning(self, "错误", f"无法读取原数据文件: {e}")
+            return
+
+        msg_box = QMessageBox(self)
+        msg_box.setWindowIcon(QIcon(APP_ICON_PATH))
+        msg_box.setWindowTitle("提示")
+        msg_box.setText("需先打包为leveldat，是否继续")
+        msg_box.setIcon(QMessageBox.Icon.Question)
+
+        continue_btn = msg_box.addButton("继续", QMessageBox.ButtonRole.YesRole)
+        cancel_btn = msg_box.addButton("取消", QMessageBox.ButtonRole.RejectRole)
+        msg_box.setDefaultButton(cancel_btn)
+
+        msg_box.exec()
+
+        if msg_box.clickedButton() == continue_btn:
+            export_path, _ = QFileDialog.getSaveFileName(
+                self,
+                "保存 level.dat",
+                "",
+                "Level Dat Files (*.dat);;All Files (*)"
+            )
+
+            if export_path:
+                if save_level_dat(export_path, self.nbt_data):
+                    self.file_path = export_path
+                    QTimer.singleShot(0, self.open_mode_select)
+                else:
+                    QMessageBox.warning(self, "错误", "保存失败")
 
     def on_file_selected(self, file_path: str):
         self.file_path = file_path
@@ -1090,31 +1315,23 @@ class MainWindow(QWidget):
             QMessageBox.warning(self, "错误", "无法读取 level.dat 文件")
             return
 
-        data_version = self.nbt_data.get('DataVersion')
-        if isinstance(data_version, dict):
-            data_version = data_version.get('value')
-        if isinstance(data_version, int):
-            if data_version > 4556:
-                QMessageBox.critical(self, "错误", "无法编辑或读取此版本文件，请等待支持")
-                return
-            elif data_version > 4440:
-                QMessageBox.warning(self, "警告", "此版本未经测试，但仍可编辑")
-
         self.open_mode_select()
 
     def open_mode_select(self):
-        dialog = ModeSelectWindow(self)
-        dialog.modeSelected.connect(self.on_mode_selected)
-        dialog.exec()
+        if self.mode_select_window is not None and self.mode_select_window.isVisible():
+            self.mode_select_window.close()
+        self.mode_select_window = ModeSelectWindow(self.nbt_data, self.file_path, self)
+        self.mode_select_window.modeSelected.connect(self.on_mode_selected)
+        self.mode_select_window.exec()
 
     def on_mode_selected(self, mode: str):
         if mode == "read":
-            self.open_read_mode()
+            QTimer.singleShot(0, self.open_read_mode)
         else:
-            self.open_edit_mode()
+            QTimer.singleShot(0, self.open_edit_mode)
 
     def open_read_mode(self):
-        dialog = ReadModeWindow(self.nbt_data, self)
+        dialog = ReadModeWindow(self.nbt_data, self.file_path, self)
         dialog.exec()
         if dialog.result() == QDialog.DialogCode.Accepted:
             QTimer.singleShot(0, self.open_mode_select)
@@ -1123,7 +1340,7 @@ class MainWindow(QWidget):
         pass
 
     def open_edit_mode(self):
-        dialog = EditModeWindow(self.nbt_data, self)
+        dialog = EditModeWindow(self.nbt_data, self.file_path, self)
         dialog.exec()
         if dialog.result() == QDialog.DialogCode.Accepted:
             self.nbt_data = read_level_dat(self.file_path)
@@ -1135,6 +1352,7 @@ class MainWindow(QWidget):
 
 def main():
     app = QApplication([])
+    app.setWindowIcon(QIcon(APP_ICON_PATH))
     window = MainWindow()
     window.show()
     app.exec()
