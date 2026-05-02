@@ -1,2 +1,5 @@
 /output
 pyinstaller.bat
+mcleveledit.spec
+/dist
+/build
